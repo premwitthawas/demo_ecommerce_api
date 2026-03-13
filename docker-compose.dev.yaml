@@ -1,0 +1,21 @@
+name: demo-app-api-dev
+services:
+  auth:
+     image: quay.io/keycloak/keycloak:latest
+     container_name: keycloak
+     command: ["start-dev"]
+     env_file:
+       - ./envs/dev/auth/.env.docker
+     ports:
+       - '5000:8080'
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+  redis:
+    image: redis:8.6.0-alpine3.23
+    command: "redis-server --requirepass 'root'"
+    ports:
+      - "6379:6379"
