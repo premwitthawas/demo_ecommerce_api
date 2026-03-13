@@ -3,6 +3,8 @@
   - golang
   - redis
   - keycloak
+  - kafka
+  - postgresql
 ## 🚀 Services
   - API Gateway Service
   - Auth Service
