@@ -1,7 +1,5 @@
 package iam
 
-import pkg_debug "github.com/premwitthawas/demo_ecommerce_api/pkgs/debug"
-
 type Claims struct {
 	// jwt.Claims
 	Subject        string                    `json:"sub"`
@@ -24,6 +22,6 @@ func NewCliamIAM(claims *Claims) (*Claims, error) {
 }
 
 func (e *Claims) IsRolePermisison(role string, key string) bool {
-	pkg_debug.Debug(e.ResourceAccess[key])
+	// pkg_debug.Debug(e.ResourceAccess[key])
 	return true
 }
