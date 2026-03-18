@@ -8,6 +8,8 @@ package product_postgresdb
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createProduct = `-- name: CreateProduct :one
@@ -15,23 +17,25 @@ INSERT INTO products (
     id,
     name,
     description,
+    category,
     image_url,
     created_at,
     updated_at,
     version
 )
-VALUES($1,$2,$3,$4,$5,$6,$7)
-RETURNING id, name, description, image_url, created_at, updated_at, version
+VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+RETURNING id, name, description, image_url, category, created_at, updated_at, version
 `
 
 type CreateProductParams struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
+	Category    string    `json:"category"`
 	ImageUrl    *string   `json:"image_url"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Version     *int32    `json:"version"`
+	Version     int32     `json:"version"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg *CreateProductParams) (*Product, error) {
@@ -39,6 +43,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg *CreateProductParams) (
 		arg.ID,
 		arg.Name,
 		arg.Description,
+		arg.Category,
 		arg.ImageUrl,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -50,6 +55,192 @@ func (q *Queries) CreateProduct(ctx context.Context, arg *CreateProductParams) (
 		&i.Name,
 		&i.Description,
 		&i.ImageUrl,
+		&i.Category,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return &i, err
+}
+
+const createProductOutbox = `-- name: CreateProductOutbox :one
+INSERT INTO outbox_messages(
+    id,
+    event_type,
+    aggr_id,
+    aggr_version,
+    status,
+    payload,
+    metadata,
+    retry_count,
+    next_retry_at,
+    err_text,
+    consumed_at,
+    created_at,
+    updated_at,
+    version
+)
+VALUES(
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8,
+    $9,
+    $10,
+    $11,
+    $12,
+    $13,
+    $14
+)
+RETURNING id, event_type, aggr_id, aggr_version, status, payload, metadata, retry_count, next_retry_at, err_text, consumed_at, created_at, updated_at, version
+`
+
+type CreateProductOutboxParams struct {
+	ID          string             `json:"id"`
+	EventType   string             `json:"event_type"`
+	AggrID      string             `json:"aggr_id"`
+	AggrVersion int32              `json:"aggr_version"`
+	Status      string             `json:"status"`
+	Payload     []byte             `json:"payload"`
+	Metadata    []byte             `json:"metadata"`
+	RetryCount  int32              `json:"retry_count"`
+	NextRetryAt pgtype.Timestamptz `json:"next_retry_at"`
+	ErrText     *string            `json:"err_text"`
+	ConsumedAt  pgtype.Timestamptz `json:"consumed_at"`
+	CreatedAt   time.Time          `json:"created_at"`
+	UpdatedAt   time.Time          `json:"updated_at"`
+	Version     int32              `json:"version"`
+}
+
+func (q *Queries) CreateProductOutbox(ctx context.Context, arg *CreateProductOutboxParams) (*OutboxMessage, error) {
+	row := q.db.QueryRow(ctx, createProductOutbox,
+		arg.ID,
+		arg.EventType,
+		arg.AggrID,
+		arg.AggrVersion,
+		arg.Status,
+		arg.Payload,
+		arg.Metadata,
+		arg.RetryCount,
+		arg.NextRetryAt,
+		arg.ErrText,
+		arg.ConsumedAt,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Version,
+	)
+	var i OutboxMessage
+	err := row.Scan(
+		&i.ID,
+		&i.EventType,
+		&i.AggrID,
+		&i.AggrVersion,
+		&i.Status,
+		&i.Payload,
+		&i.Metadata,
+		&i.RetryCount,
+		&i.NextRetryAt,
+		&i.ErrText,
+		&i.ConsumedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return &i, err
+}
+
+const deleteProductByID = `-- name: DeleteProductByID :one
+DELETE
+FROM products
+WHERE id = $1 AND version = $2
+RETURNING id, name, description, image_url, category, created_at, updated_at, version
+`
+
+type DeleteProductByIDParams struct {
+	ID      string `json:"id"`
+	Version int32  `json:"version"`
+}
+
+func (q *Queries) DeleteProductByID(ctx context.Context, arg *DeleteProductByIDParams) (*Product, error) {
+	row := q.db.QueryRow(ctx, deleteProductByID, arg.ID, arg.Version)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ImageUrl,
+		&i.Category,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return &i, err
+}
+
+const getProductByID = `-- name: GetProductByID :one
+SELECT id, name, description, image_url, category, created_at, updated_at, version
+FROM products
+WHERE id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetProductByID(ctx context.Context, id string) (*Product, error) {
+	row := q.db.QueryRow(ctx, getProductByID, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ImageUrl,
+		&i.Category,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return &i, err
+}
+
+const updateProductByID = `-- name: UpdateProductByID :one
+UPDATE products
+SET name = COALESCE($3,name),
+    description = COALESCE($4,description),
+    image_url = COALESCE($5,image_url),
+    category = COALESCE($6,category),
+    updated_at = NOW(),
+    version = version + 1
+WHERE id = $1 AND version = $2
+RETURNING id, name, description, image_url, category, created_at, updated_at, version
+`
+
+type UpdateProductByIDParams struct {
+	ID          string  `json:"id"`
+	Version     int32   `json:"version"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	ImageUrl    *string `json:"image_url"`
+	Category    string  `json:"category"`
+}
+
+func (q *Queries) UpdateProductByID(ctx context.Context, arg *UpdateProductByIDParams) (*Product, error) {
+	row := q.db.QueryRow(ctx, updateProductByID,
+		arg.ID,
+		arg.Version,
+		arg.Name,
+		arg.Description,
+		arg.ImageUrl,
+		arg.Category,
+	)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ImageUrl,
+		&i.Category,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,

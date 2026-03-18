@@ -24,7 +24,7 @@ type OutboxMessage struct {
 	ConsumedAt  pgtype.Timestamptz `json:"consumed_at"`
 	CreatedAt   time.Time          `json:"created_at"`
 	UpdatedAt   time.Time          `json:"updated_at"`
-	Version     *int32             `json:"version"`
+	Version     int32              `json:"version"`
 }
 
 type Product struct {
@@ -32,7 +32,8 @@ type Product struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	ImageUrl    *string   `json:"image_url"`
+	Category    string    `json:"category"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	Version     *int32    `json:"version"`
+	Version     int32     `json:"version"`
 }

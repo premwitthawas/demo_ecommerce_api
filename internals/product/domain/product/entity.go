@@ -21,13 +21,13 @@ type Product struct {
 
 func NewProduct(id, name, desc string, category ProductCategoryType) (*Product, error) {
 	if id == "" {
-		return nil, ErrIDIsEmpty
+		return nil, ErrProductIDEmpty
 	}
 	if name == "" {
-		return nil, ErrNameIsEmpty
+		return nil, ErrProductNameEmpty
 	}
 	if desc == "" {
-		return nil, ErrDescriptionIsEmpty
+		return nil, ErrProductDescEmpty
 	}
 	now := time.Now()
 	product := &Product{

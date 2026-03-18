@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS outbox_messages (
     consumed_at timestamptz,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
-    version int default 1
+    version int not null default 1
 );
 
 CREATE INDEX idx_product_outbox_message_polling on outbox_messages(next_retry_at)

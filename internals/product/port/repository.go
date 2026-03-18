@@ -10,13 +10,13 @@ import (
 type ProductRepository interface {
 	CreateProduct(ctx context.Context, entity *domainProduct.Product) (*domainProduct.Product, error)
 	GetProductByID(ctx context.Context, id string) (*domainProduct.Product, error)
-	DeleteProductByID(ctx context.Context, id string) (*domainProduct.Product, error)
-	UpdateProductByID(ctx context.Context, id string) (*domainProduct.Product, error)
+	DeleteProductByID(ctx context.Context, id string, version int32) (*domainProduct.Product, error)
+	UpdateProductByID(ctx context.Context, entity *domainProduct.Product) (*domainProduct.Product, error)
 	WithTx(tx any) ProductRepository
 }
 
 type ProductOutboxMessageRepository interface {
-	CreateProductOutboxMessage(ctx context.Context, entity *domainOutbox.OutboxMessage) (*domainOutbox.OutboxMessage, error)
+	CreateProductOutboxMessage(ctx context.Context, entity *domainOutbox.ProductOutboxMessage) (*domainOutbox.ProductOutboxMessage, error)
 	WithTx(tx any) ProductOutboxMessageRepository
 }
 
