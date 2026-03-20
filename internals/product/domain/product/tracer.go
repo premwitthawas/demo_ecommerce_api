@@ -8,3 +8,9 @@ const (
 	TracerProductRepositoryDeleteByID ProductTracerEvent = "repository.product.delete_by_id"
 	TracerProductRepositoryGetByID    ProductTracerEvent = "repository.product.get_by_id"
 )
+
+const (
+	TracerProductUsecaseCreated    ProductTracerEvent = "usecase.product.created"
+	TracerProductUsecaseGetByID    ProductTracerEvent = "usecase.product.get_by_id"
+	TracerProductUsecaseDeleteByID ProductTracerEvent = "usecase.product.delete_by_id"
+)

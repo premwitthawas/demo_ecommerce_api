@@ -6,7 +6,16 @@ type ProductCategoryType string
 
 const (
 	Electronic ProductCategoryType = "electronic"
+	Mobile     ProductCategoryType = "mobile"
 )
+
+func (c ProductCategoryType) IsValid() bool {
+	switch c {
+	case Electronic, Mobile:
+		return true
+	}
+	return false
+}
 
 type Product struct {
 	ID          string              `json:"id"`
@@ -28,6 +37,9 @@ func NewProduct(id, name, desc string, category ProductCategoryType) (*Product, 
 	}
 	if desc == "" {
 		return nil, ErrProductDescEmpty
+	}
+	if !category.IsValid() {
+		return nil, ErrProductCategoryInvalidate
 	}
 	now := time.Now()
 	product := &Product{

@@ -41,11 +41,10 @@ func (p *productOutboxRepository) WithTx(tx any) port.ProductOutboxMessageReposi
 }
 
 func NewProductOutboxRepository(pool *pgxpool.Pool,
-	tp trace.Tracer,
-	q *product_postgresdb.Queries) port.ProductOutboxMessageRepository {
+	tp trace.Tracer) port.ProductOutboxMessageRepository {
 	return &productOutboxRepository{
 		pool: pool,
 		tp:   tp,
-		q:    q,
+		q:    product_postgresdb.New(pool),
 	}
 }

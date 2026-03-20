@@ -38,9 +38,6 @@ func NewProductOutbox(payload *ProductOutboxMessage) (*ProductOutboxMessage, err
 	if payload.EventType == "" {
 		return nil, ErrProductOutboxEventTypeEmpty
 	}
-	if payload.Status == "" {
-		return nil, ErrProductOutboxStatustypeEmpty
-	}
 	if len(payload.Payload) == 0 {
 		return nil, ErrProductOutboxPayloadEmpty
 	}

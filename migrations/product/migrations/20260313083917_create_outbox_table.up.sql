@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS outbox_messages (
     payload jsonb,
     metadata jsonb,
     retry_count int not null default 0,
-    next_retry_at timestamptz,
+    next_retry_at timestamptz not null,
     err_text text,
     consumed_at timestamptz,
     created_at timestamptz not null default now(),
@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS outbox_messages (
 );
 
 CREATE INDEX idx_product_outbox_message_polling on outbox_messages(next_retry_at)
-WHERE status = 'pendding';
+WHERE status = 'pending';

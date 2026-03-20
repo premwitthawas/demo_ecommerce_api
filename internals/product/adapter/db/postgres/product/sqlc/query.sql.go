@@ -108,7 +108,7 @@ type CreateProductOutboxParams struct {
 	Payload     []byte             `json:"payload"`
 	Metadata    []byte             `json:"metadata"`
 	RetryCount  int32              `json:"retry_count"`
-	NextRetryAt pgtype.Timestamptz `json:"next_retry_at"`
+	NextRetryAt time.Time          `json:"next_retry_at"`
 	ErrText     *string            `json:"err_text"`
 	ConsumedAt  pgtype.Timestamptz `json:"consumed_at"`
 	CreatedAt   time.Time          `json:"created_at"`

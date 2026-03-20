@@ -18,6 +18,7 @@ import (
 	gateway_middleware "github.com/premwitthawas/demo_ecommerce_api/internals/gateway/adapter/middleware"
 	"github.com/premwitthawas/demo_ecommerce_api/internals/gateway/domain/iam"
 	"github.com/premwitthawas/demo_ecommerce_api/internals/gateway/port/config"
+	port_iam "github.com/premwitthawas/demo_ecommerce_api/internals/gateway/port/iam"
 	pkg_otel "github.com/premwitthawas/demo_ecommerce_api/pkgs/otel"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -122,11 +123,29 @@ func (b *BootStrapApplication) setupProtectRoutes() {
 	if err != nil {
 		log.Printf("Error create Keycloak IAM failure: %v", err)
 	}
-	authAPI := b.app.Group("/api/v1/auth")
-	authAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
-	authAPI.Use(gateway_middleware.RBACMiddleware(b.cfg, b.tp, "admin"))
-	authAPI.All("/*", proxy.Balancer(proxy.Config{
-		Servers: []string{"http://127.0.0.1:5001"},
+	// authAPI := b.app.Group("/api/v1/auth")
+	// authAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
+	// authAPI.Use(gateway_middleware.RBACMiddleware(b.cfg, b.tp, "admin"))
+	// authAPI.All("/*", proxy.Balancer(proxy.Config{
+	// 	Servers: []string{"http://127.0.0.1:5001"},
+	// 	ModifyRequest: func(c fiber.Ctx) error {
+	// 		headers := make(propagation.HeaderCarrier)
+	// 		otel.GetTextMapPropagator().Inject(c.Context(), headers)
+	// 		for k, v := range headers {
+	// 			c.Request().Header.Set(k, string(v[0]))
+	// 		}
+	// 		if claims, ok := c.Locals("user_claims").(*iam.Claims); ok {
+	// 			c.Request().Header.Set("X-User-ID", claims.Subject)
+	// 		}
+	// 		return nil
+	// 	},
+	// }))
+	b.registerProductRoutest(keycloakIAM)
+}
+
+func (b *BootStrapApplication) registerProductRoutest(keycloakIAM port_iam.IAMAapter) error {
+	proxy := proxy.Balancer(proxy.Config{
+		Servers: []string{"http://127.0.0.1:5002"},
 		ModifyRequest: func(c fiber.Ctx) error {
 			headers := make(propagation.HeaderCarrier)
 			otel.GetTextMapPropagator().Inject(c.Context(), headers)
@@ -138,14 +157,14 @@ func (b *BootStrapApplication) setupProtectRoutes() {
 			}
 			return nil
 		},
-	}))
-	// authAPI.All("/*", func(c fiber.Ctx) error {
-	// 	headers := make(propagation.HeaderCarrier)
-	// 	otel.GetTextMapPropagator().Inject(c.Context(), headers)
-	// 	for k, v := range headers {
-	// 		c.Request().Header.Set(k, string(v[0]))
-	// 	}
-	// 	targetURL := "http://127.0.0.1:5001" + c.Path()
-	// 	return proxy.Do(c, targetURL)
-	// })
+	})
+	productRotuesAPI := b.app.Group("/api/v1/products")
+	productRotuesAPI.Get("/:id", proxy)
+	privateProductRotuesAPI := productRotuesAPI.Group("")
+	privateProductRotuesAPI.Use()
+	privateProductRotuesAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
+	privateProductRotuesAPI.Use(gateway_middleware.RBACMiddleware(b.cfg, b.tp, "admin"))
+	privateProductRotuesAPI.Post("", proxy)
+	privateProductRotuesAPI.Delete(":id", proxy)
+	return nil
 }

@@ -11,6 +11,7 @@ var (
 	ErrProductOutboxPayloadEmpty            = errors.New("product.outbox: payload is empty")
 	ErrProductOutboxMetadataEmpty           = errors.New("product.outbox: metadata is empty")
 	ErrProductOutboxStatustypeEmpty         = errors.New("product.outbox: status is empty")
+	ErrProductOutboxJsonParse               = errors.New("product.outbox: json parse is failure")
 
 	// Repository / State Errors
 	ErrProductOutboxNotFound    = errors.New("product.outbox: not found")

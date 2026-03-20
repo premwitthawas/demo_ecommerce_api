@@ -15,13 +15,10 @@ func ProductOutboxRepositoryTranslateCreate(entity *outbox.ProductOutboxMessage)
 		Status:      entity.Status,
 		Payload:     entity.Payload,
 		Metadata:    entity.Metadata,
-		NextRetryAt: pgtype.Timestamptz{
-			Time:  entity.NextRetryAt,
-			Valid: true,
-		},
-		RetryCount: entity.RetryCount,
-		CreatedAt:  entity.CreatedAt,
-		UpdatedAt:  entity.UpdatedAt,
+		NextRetryAt: entity.NextRetryAt,
+		RetryCount:  entity.RetryCount,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
 	}
 	if entity.Version > 0 {
 		payload.Version = entity.Version
@@ -48,7 +45,7 @@ func ProductOutboxRepositoryTranslateRowToDomain(row *product_postgresdb.OutboxM
 		Payload:     row.Payload,
 		Metadata:    row.Metadata,
 		RetryCount:  row.RetryCount,
-		NextRetryAt: row.NextRetryAt.Time,
+		NextRetryAt: row.NextRetryAt,
 		CreatedAt:   row.CreatedAt,
 		UpdatedAt:   row.UpdatedAt,
 		Version:     row.Version,
