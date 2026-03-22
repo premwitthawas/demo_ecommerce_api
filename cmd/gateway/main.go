@@ -10,6 +10,7 @@ import (
 	fiberotel "github.com/gofiber/contrib/v3/otel"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/helmet"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/proxy"
 	"github.com/gofiber/fiber/v3/middleware/recover"
@@ -21,6 +22,7 @@ import (
 	port_iam "github.com/premwitthawas/demo_ecommerce_api/internals/gateway/port/iam"
 	pkg_otel "github.com/premwitthawas/demo_ecommerce_api/pkgs/otel"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
@@ -116,6 +118,17 @@ func (b *BootStrapApplication) setupGlobalMiddleware() {
 	b.app.Use(logger.New())
 	b.app.Use(fiberotel.Middleware())
 	b.app.Use(helmet.New())
+	b.app.Use(limiter.New(limiter.Config{
+		Max: 120,
+		LimitReached: func(c fiber.Ctx) error {
+			span := trace.SpanFromContext(c.Context())
+			span.SetAttributes(attribute.Bool("error", true))
+			span.AddEvent("rate_limit_exceeded")
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "Too many requests, please try again later.",
+			})
+		},
+	}))
 }
 
 func (b *BootStrapApplication) setupProtectRoutes() {
@@ -123,24 +136,8 @@ func (b *BootStrapApplication) setupProtectRoutes() {
 	if err != nil {
 		log.Printf("Error create Keycloak IAM failure: %v", err)
 	}
-	// authAPI := b.app.Group("/api/v1/auth")
-	// authAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
-	// authAPI.Use(gateway_middleware.RBACMiddleware(b.cfg, b.tp, "admin"))
-	// authAPI.All("/*", proxy.Balancer(proxy.Config{
-	// 	Servers: []string{"http://127.0.0.1:5001"},
-	// 	ModifyRequest: func(c fiber.Ctx) error {
-	// 		headers := make(propagation.HeaderCarrier)
-	// 		otel.GetTextMapPropagator().Inject(c.Context(), headers)
-	// 		for k, v := range headers {
-	// 			c.Request().Header.Set(k, string(v[0]))
-	// 		}
-	// 		if claims, ok := c.Locals("user_claims").(*iam.Claims); ok {
-	// 			c.Request().Header.Set("X-User-ID", claims.Subject)
-	// 		}
-	// 		return nil
-	// 	},
-	// }))
 	b.registerProductRoutest(keycloakIAM)
+	b.registerSearchRoutest(keycloakIAM)
 }
 
 func (b *BootStrapApplication) registerProductRoutest(keycloakIAM port_iam.IAMAapter) error {
@@ -159,12 +156,34 @@ func (b *BootStrapApplication) registerProductRoutest(keycloakIAM port_iam.IAMAa
 		},
 	})
 	productRotuesAPI := b.app.Group("/api/v1/products")
-	productRotuesAPI.Get("/:id", proxy)
 	privateProductRotuesAPI := productRotuesAPI.Group("")
-	privateProductRotuesAPI.Use()
 	privateProductRotuesAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
+	privateProductRotuesAPI.Get("/:id", proxy)
 	privateProductRotuesAPI.Use(gateway_middleware.RBACMiddleware(b.cfg, b.tp, "admin"))
 	privateProductRotuesAPI.Post("", proxy)
 	privateProductRotuesAPI.Delete(":id", proxy)
+	privateProductRotuesAPI.Patch(":id", proxy)
+	return nil
+}
+
+func (b *BootStrapApplication) registerSearchRoutest(keycloakIAM port_iam.IAMAapter) error {
+	proxy := proxy.Balancer(proxy.Config{
+		Servers: []string{"http://127.0.0.1:5003"},
+		ModifyRequest: func(c fiber.Ctx) error {
+			headers := make(propagation.HeaderCarrier)
+			otel.GetTextMapPropagator().Inject(c.Context(), headers)
+			for k, v := range headers {
+				c.Request().Header.Set(k, string(v[0]))
+			}
+			if claims, ok := c.Locals("user_claims").(*iam.Claims); ok {
+				c.Request().Header.Set("X-User-ID", claims.Subject)
+			}
+			return nil
+		},
+	})
+	productsearchAPI := b.app.Group("/api/v1/search")
+	privateProductRotuesAPI := productsearchAPI.Group("")
+	privateProductRotuesAPI.Use(gateway_middleware.AuthMiddleware(b.cfg, keycloakIAM, b.tp))
+	privateProductRotuesAPI.Get("/products", proxy)
 	return nil
 }

@@ -12,8 +12,15 @@ type ProductCreateDTO struct {
 	Category    string
 }
 
+type ProductUpdateDTO struct {
+	Name        *string
+	Description *string
+	Category    *string
+}
+
 type ProductUsecase interface {
 	CreateProduct(ctx context.Context, dto *ProductCreateDTO) (*product.Product, error)
 	GetProductByID(ctx context.Context, id string) (*product.Product, error)
+	UpdateProductByID(ctx context.Context, id string, dto *ProductUpdateDTO) (*product.Product, error)
 	DeleteProductByID(ctx context.Context, id string) (*product.Product, error)
 }

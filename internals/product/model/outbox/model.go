@@ -1,6 +1,11 @@
-package product
+package product_outbox
 
-import "time"
+import (
+	"fmt"
+	"math"
+	"math/rand"
+	"time"
+)
 
 type ProductOutboxMessageStatus string
 
@@ -61,4 +66,44 @@ func NewProductOutbox(payload *ProductOutboxMessage) (*ProductOutboxMessage, err
 		ErrText:     nil,
 		ConsumedAt:  nil,
 	}, nil
+}
+
+func calulateJitter() time.Time {
+	ms := rand.Intn(500)
+	return time.Now().Add(time.Duration(ms) * time.Millisecond)
+}
+
+func (o *ProductOutboxMessage) UpdateOutboxPublished() {
+	now := time.Now()
+	// o.Version++
+	o.UpdatedAt = now
+	o.ConsumedAt = &now
+	o.Status = string(PUBLISHED)
+}
+
+func (o *ProductOutboxMessage) UpdateOutboxRetrying(err error) {
+	now := time.Now()
+	// o.Version++
+	o.RetryCount++
+	backoff := time.Duration(math.Pow(2, float64(o.RetryCount))) * time.Second
+	o.NextRetryAt = calulateJitter().Add(backoff)
+	if err != nil {
+		errStr := err.Error()
+		o.ErrText = &errStr
+	} else {
+		defaultErr := "unknown error during retry"
+		o.ErrText = &defaultErr
+	}
+	o.UpdatedAt = now
+	o.Status = string(RETRYING)
+}
+
+func (o *ProductOutboxMessage) UpdateOutboxDLQ(err error) {
+	now := time.Now()
+	// o.Version++
+	o.RetryCount++
+	errStr := fmt.Sprintf("Final attempt failed: %v", err)
+	o.ErrText = &errStr
+	o.UpdatedAt = now
+	o.Status = string(DLQ)
 }

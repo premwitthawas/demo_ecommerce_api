@@ -5,6 +5,8 @@
   - keycloak
   - kafka
   - postgresql
+  - elasticsearch
+  - kibana
 ## 🚀 Services
   - API Gateway Service
   - Auth Service

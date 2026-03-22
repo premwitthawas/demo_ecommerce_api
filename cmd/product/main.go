@@ -47,6 +47,7 @@ func main() {
 	api.Post("/", handler.CreateProduct)
 	api.Get(":id", handler.GetProductByID)
 	api.Delete(":id", handler.DeleteProductByID)
+	api.Patch(":id", handler.UpdateProductByID)
 	g.Go(func() error {
 		log.Printf("[product][info]: app listening at %s \n", cfg.GetAPPConfig().Address)
 		return app.Listen(cfg.GetAPPConfig().Address)

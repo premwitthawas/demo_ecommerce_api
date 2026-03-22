@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS outbox_messages (
 );
 
 CREATE INDEX idx_product_outbox_message_polling on outbox_messages(next_retry_at)
-WHERE status = 'pending';
+WHERE status = 'pending' OR status = 'retrying';

@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v3"
-	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/domain/outbox"
 	"github.com/premwitthawas/demo_ecommerce_api/internals/product/domain/product"
+	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/model/outbox"
 	pkg_error_response "github.com/premwitthawas/demo_ecommerce_api/pkgs/error_handler"
 )
 

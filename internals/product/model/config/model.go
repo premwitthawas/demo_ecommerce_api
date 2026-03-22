@@ -1,4 +1,4 @@
-package config
+package proudct_config
 
 type ProductAppConfig struct {
 	Address        string

@@ -3,7 +3,7 @@ package translate_product_postgresdb
 import (
 	"github.com/jackc/pgx/v5/pgtype"
 	product_postgresdb "github.com/premwitthawas/demo_ecommerce_api/internals/product/adapter/db/postgres/product/sqlc"
-	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/domain/outbox"
+	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/model/outbox"
 )
 
 func ProductOutboxRepositoryTranslateCreate(entity *outbox.ProductOutboxMessage) *product_postgresdb.CreateProductOutboxParams {
@@ -55,6 +55,29 @@ func ProductOutboxRepositoryTranslateRowToDomain(row *product_postgresdb.OutboxM
 	}
 	if row.ConsumedAt.Valid {
 		payload.ConsumedAt = &row.ConsumedAt.Time
+	}
+	return payload
+}
+func ProductOutboxRepositoryEntityToUpdataOutboxMessageParams(entity *outbox.ProductOutboxMessage) *product_postgresdb.UpdataOutboxMessageParams {
+	payload := &product_postgresdb.UpdataOutboxMessageParams{
+		ID:          entity.ID,
+		Version:     entity.Version,
+		Status:      entity.Status,
+		NextRetryAt: entity.NextRetryAt,
+		RetryCount:  entity.RetryCount,
+	}
+	if entity.ErrText != nil {
+		payload.ErrText = entity.ErrText
+	}
+	if entity.ConsumedAt != nil {
+		payload.ConsumedAt = pgtype.Timestamptz{
+			Time:  *entity.ConsumedAt,
+			Valid: true,
+		}
+	} else {
+		payload.ConsumedAt = pgtype.Timestamptz{
+			Valid: false,
+		}
 	}
 	return payload
 }

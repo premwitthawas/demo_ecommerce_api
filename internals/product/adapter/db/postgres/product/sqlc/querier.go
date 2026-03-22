@@ -12,7 +12,9 @@ type Querier interface {
 	CreateProduct(ctx context.Context, arg *CreateProductParams) (*Product, error)
 	CreateProductOutbox(ctx context.Context, arg *CreateProductOutboxParams) (*OutboxMessage, error)
 	DeleteProductByID(ctx context.Context, arg *DeleteProductByIDParams) (*Product, error)
+	GetOutboxMessagesPendingOrRetrying(ctx context.Context, arg *GetOutboxMessagesPendingOrRetryingParams) ([]*OutboxMessage, error)
 	GetProductByID(ctx context.Context, id string) (*Product, error)
+	UpdataOutboxMessage(ctx context.Context, arg *UpdataOutboxMessageParams) (*OutboxMessage, error)
 	UpdateProductByID(ctx context.Context, arg *UpdateProductByIDParams) (*Product, error)
 }
 

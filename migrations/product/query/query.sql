@@ -70,3 +70,25 @@ VALUES(
     $14
 )
 RETURNING *;
+
+-- name: GetOutboxMessagesPendingOrRetrying :many
+SELECT *
+FROM outbox_messages
+WHERE (status = 'pending' or status = 'retrying')
+AND (next_retry_at IS NULL OR next_retry_at < now())
+AND retry_count <= $1
+LIMIT $2
+FOR UPDATE SKIP LOCKED;
+
+-- name: UpdataOutboxMessage :one
+UPDATE outbox_messages
+SET
+    status = COALESCE($3,status),
+    err_text = COALESCE($4,err_text),
+    retry_count = COALESCE($5,retry_count),
+    consumed_at = COALESCE($6,consumed_at),
+    next_retry_at = COALESCE($7, next_retry_at),
+    updated_at = now(),
+    version = version + 1
+WHERE id = $1 AND version = $2
+RETURNING *;

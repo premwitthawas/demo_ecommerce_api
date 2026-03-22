@@ -181,6 +181,56 @@ func (q *Queries) DeleteProductByID(ctx context.Context, arg *DeleteProductByIDP
 	return &i, err
 }
 
+const getOutboxMessagesPendingOrRetrying = `-- name: GetOutboxMessagesPendingOrRetrying :many
+SELECT id, event_type, aggr_id, aggr_version, status, payload, metadata, retry_count, next_retry_at, err_text, consumed_at, created_at, updated_at, version
+FROM outbox_messages
+WHERE (status = 'pending' or status = 'retrying')
+AND (next_retry_at IS NULL OR next_retry_at < now())
+AND retry_count <= $1
+LIMIT $2
+FOR UPDATE SKIP LOCKED
+`
+
+type GetOutboxMessagesPendingOrRetryingParams struct {
+	RetryCount int32 `json:"retry_count"`
+	Limit      int32 `json:"limit"`
+}
+
+func (q *Queries) GetOutboxMessagesPendingOrRetrying(ctx context.Context, arg *GetOutboxMessagesPendingOrRetryingParams) ([]*OutboxMessage, error) {
+	rows, err := q.db.Query(ctx, getOutboxMessagesPendingOrRetrying, arg.RetryCount, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*OutboxMessage{}
+	for rows.Next() {
+		var i OutboxMessage
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventType,
+			&i.AggrID,
+			&i.AggrVersion,
+			&i.Status,
+			&i.Payload,
+			&i.Metadata,
+			&i.RetryCount,
+			&i.NextRetryAt,
+			&i.ErrText,
+			&i.ConsumedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Version,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProductByID = `-- name: GetProductByID :one
 SELECT id, name, description, image_url, category, created_at, updated_at, version
 FROM products
@@ -197,6 +247,60 @@ func (q *Queries) GetProductByID(ctx context.Context, id string) (*Product, erro
 		&i.Description,
 		&i.ImageUrl,
 		&i.Category,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Version,
+	)
+	return &i, err
+}
+
+const updataOutboxMessage = `-- name: UpdataOutboxMessage :one
+UPDATE outbox_messages
+SET
+    status = COALESCE($3,status),
+    err_text = COALESCE($4,err_text),
+    retry_count = COALESCE($5,retry_count),
+    consumed_at = COALESCE($6,consumed_at),
+    next_retry_at = COALESCE($7, next_retry_at),
+    updated_at = now(),
+    version = version + 1
+WHERE id = $1 AND version = $2
+RETURNING id, event_type, aggr_id, aggr_version, status, payload, metadata, retry_count, next_retry_at, err_text, consumed_at, created_at, updated_at, version
+`
+
+type UpdataOutboxMessageParams struct {
+	ID          string             `json:"id"`
+	Version     int32              `json:"version"`
+	Status      string             `json:"status"`
+	ErrText     *string            `json:"err_text"`
+	RetryCount  int32              `json:"retry_count"`
+	ConsumedAt  pgtype.Timestamptz `json:"consumed_at"`
+	NextRetryAt time.Time          `json:"next_retry_at"`
+}
+
+func (q *Queries) UpdataOutboxMessage(ctx context.Context, arg *UpdataOutboxMessageParams) (*OutboxMessage, error) {
+	row := q.db.QueryRow(ctx, updataOutboxMessage,
+		arg.ID,
+		arg.Version,
+		arg.Status,
+		arg.ErrText,
+		arg.RetryCount,
+		arg.ConsumedAt,
+		arg.NextRetryAt,
+	)
+	var i OutboxMessage
+	err := row.Scan(
+		&i.ID,
+		&i.EventType,
+		&i.AggrID,
+		&i.AggrVersion,
+		&i.Status,
+		&i.Payload,
+		&i.Metadata,
+		&i.RetryCount,
+		&i.NextRetryAt,
+		&i.ErrText,
+		&i.ConsumedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Version,

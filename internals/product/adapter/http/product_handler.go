@@ -19,8 +19,10 @@ type productHttpHandler struct {
 type ProductHttpHandlerEventtye string
 
 const (
-	Created ProductHttpHandlerEventtye = "handler.product.create"
-	GetByID ProductHttpHandlerEventtye = "handler.product.get_by_id"
+	Created    ProductHttpHandlerEventtye = "handler.product.create"
+	GetByID    ProductHttpHandlerEventtye = "handler.product.get_by_id"
+	DeleteByID ProductHttpHandlerEventtye = "handler.product.delete_by_id"
+	UpdateByID ProductHttpHandlerEventtye = "handler.product.update_by_id"
 )
 
 func NewHttpHandler(tp trace.Tracer, productUsecase port.ProductUsecase) *productHttpHandler {
@@ -77,7 +79,7 @@ func (h *productHttpHandler) GetProductByID(c fiber.Ctx) error {
 }
 
 func (h *productHttpHandler) DeleteProductByID(c fiber.Ctx) error {
-	ctx, sp := h.tp.Start(c.Context(), string(GetByID))
+	ctx, sp := h.tp.Start(c.Context(), string(DeleteByID))
 	defer sp.End()
 	id := c.Params("id")
 	if id == "" {
@@ -89,6 +91,40 @@ func (h *productHttpHandler) DeleteProductByID(c fiber.Ctx) error {
 		})
 	}
 	res, err := h.productUsecase.DeleteProductByID(ctx, id)
+	if err != nil {
+		sp.RecordError(err)
+		sp.SetStatus(codes.Error, err.Error())
+		return product_dto.ProductTranslateError(c, err)
+	}
+	return c.Status(200).JSON(product_dto.TranslateProduct(res))
+}
+
+func (h *productHttpHandler) UpdateProductByID(c fiber.Ctx) error {
+	ctx, sp := h.tp.Start(c.Context(), string(UpdateByID))
+	defer sp.End()
+	id := c.Params("id")
+	if id == "" {
+		sp.RecordError(fmt.Errorf("parameter id is invalid or empty"))
+		sp.SetStatus(codes.Error, "parameter id is invalid or empty")
+		return c.Status(400).JSON(&pkg_error_response.ErrorResponse{
+			Status:  400,
+			Message: "parameter id is invalid or empty",
+		})
+	}
+	req := new(product_dto.ProductUpdateReq)
+	if err := c.Bind().JSON(req); err != nil {
+		sp.RecordError(err)
+		sp.SetStatus(codes.Error, err.Error())
+		return c.Status(400).JSON(&pkg_error_response.ErrorResponse{
+			Status:  400,
+			Message: "body request error.",
+		})
+	}
+	res, err := h.productUsecase.UpdateProductByID(ctx, id, &port.ProductUpdateDTO{
+		Name:        req.Name,
+		Description: req.Description,
+		Category:    req.Category,
+	})
 	if err != nil {
 		sp.RecordError(err)
 		sp.SetStatus(codes.Error, err.Error())

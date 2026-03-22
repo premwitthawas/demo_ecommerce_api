@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
-	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/domain/outbox"
 	product "github.com/premwitthawas/demo_ecommerce_api/internals/product/domain/product"
+	outbox "github.com/premwitthawas/demo_ecommerce_api/internals/product/model/outbox"
 	"go.opentelemetry.io/otel/trace"
 )
 
