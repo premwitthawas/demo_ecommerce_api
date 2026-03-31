@@ -23,7 +23,8 @@ import (
 var tracer = otel.Tracer("product-service")
 
 func main() {
-	tp := pkg_otel.SetupOtelTracer("localhost:4317", "product-service")
+	cfg := product_dotenvx.NewConfig()
+	tp := pkg_otel.SetupOtelTracer(cfg.GetAPPConfig().OtelURL, "product-service")
 	defer func() {
 		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancle()
@@ -34,7 +35,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	g, gCtx := errgroup.WithContext(ctx)
-	cfg := product_dotenvx.NewConfig()
 	pool, _ := pkg_postgres.NewPostgresPool(context.Background(), cfg.GetDBConfig().DatabaseURL)
 	txRepo := product_postgresdb.NewTransactionManger(pool, tracer)
 	outboxRepo := product_postgresdb.NewProductOutboxRepository(pool, tracer)

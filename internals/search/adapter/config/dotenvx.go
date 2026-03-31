@@ -41,6 +41,7 @@ func NewConfig() port.Config {
 					ElasticsearchAddress:  pkgs_env.GetEnvString("APP_ELASTICSEARC_ADDRESS", "APP_ELASTICSEARC_ADDRESS"),
 					ElasticsearchUsername: pkgs_env.GetEnvString("APP_ELASTICSEARC_USERNAME", "APP_ELASTICSEARC_USERNAME"),
 					ElasticsearchPassword: pkgs_env.GetEnvString("APP_ELASTICSEARC_PASSWORD", "APP_ELASTICSEARC_PASSWORD"),
+					OtelURL:               pkgs_env.GetEnvString("APP_OTEL_URL", "APP_OTEL_URL"),
 				},
 			},
 		}

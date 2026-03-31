@@ -37,7 +37,8 @@ type BootStrapApplication struct {
 }
 
 func main() {
-	tp := pkg_otel.SetupOtelTracer("localhost:4317", "gateway-service")
+	cfg := dotenvx.NewGatewayConfig()
+	tp := pkg_otel.SetupOtelTracer(cfg.GetAppConfig().OtelURL, "gateway-service")
 	defer func() {
 		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancle()
@@ -48,7 +49,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	g, gctx := errgroup.WithContext(ctx)
-	cfg := dotenvx.NewGatewayConfig()
 	gateway := NewApplication()
 	bootstrap := NewBoostrapApplication(gateway, cfg, tracer)
 	bootstrap.setup()
@@ -142,7 +142,7 @@ func (b *BootStrapApplication) setupProtectRoutes() {
 
 func (b *BootStrapApplication) registerProductRoutest(keycloakIAM port_iam.IAMAapter) error {
 	proxy := proxy.Balancer(proxy.Config{
-		Servers: []string{"http://127.0.0.1:5002"},
+		Servers: []string{b.cfg.GetAppConfig().ProductURL},
 		ModifyRequest: func(c fiber.Ctx) error {
 			headers := make(propagation.HeaderCarrier)
 			otel.GetTextMapPropagator().Inject(c.Context(), headers)
@@ -168,7 +168,7 @@ func (b *BootStrapApplication) registerProductRoutest(keycloakIAM port_iam.IAMAa
 
 func (b *BootStrapApplication) registerSearchRoutest(keycloakIAM port_iam.IAMAapter) error {
 	proxy := proxy.Balancer(proxy.Config{
-		Servers: []string{"http://127.0.0.1:5003"},
+		Servers: []string{b.cfg.GetAppConfig().SearchURL},
 		ModifyRequest: func(c fiber.Ctx) error {
 			headers := make(propagation.HeaderCarrier)
 			otel.GetTextMapPropagator().Inject(c.Context(), headers)

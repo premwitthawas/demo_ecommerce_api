@@ -34,8 +34,11 @@ func NewGatewayConfig() port.GatewayConfigAdapter {
 		cfg = &gatewayConfig{
 			GatewayConfig: &domain.GatewayConfig{
 				App: &domain.GatewayAppConfig{
-					Address: pkgs_env.GetEnvString("APP_ADDRESS", "127.0.0.1:6001"),
-					Name:    pkgs_env.GetEnvString("APP_NAME", "gateway"),
+					Address:    pkgs_env.GetEnvString("APP_ADDRESS", "127.0.0.1:6001"),
+					Name:       pkgs_env.GetEnvString("APP_NAME", "gateway"),
+					OtelURL:    pkgs_env.GetEnvString("APP_OTEL_URL", "localhost:4318"),
+					SearchURL:  pkgs_env.GetEnvString("APP_SEARCH_SVC_URL", "http://127.0.0.1:5003"),
+					ProductURL: pkgs_env.GetEnvString("APP_PRODUCT_SVC_URL", "http://127.0.0.1:5002"),
 				},
 				Auth: &domain.AuthServiceConfig{
 					Url: pkgs_env.GetEnvString("AUTH_SVC_BASE_URL", "http://127.0.0.1:5001"),

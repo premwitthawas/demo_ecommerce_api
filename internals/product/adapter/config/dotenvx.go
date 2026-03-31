@@ -37,6 +37,7 @@ func NewConfig() port.Config {
 					Address:        pkgs_env.GetEnvString("APP_ADDRESS", ":5002"),
 					Name:           pkgs_env.GetEnvString("APP_NAME", "product"),
 					Mode:           pkgs_env.GetEnvString("APP_MODE", "dev"),
+					OtelURL:        pkgs_env.GetEnvString("APP_OTEL_URL", "localhost:4317"),
 					KafkaAddresses: pkgs_env.GetEnvString("APP_KAFKA_ADREESES", "localhost:9092"),
 				},
 				DB: &proudct_config.ProductDBConfig{

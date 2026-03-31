@@ -23,7 +23,9 @@ import (
 var tracer = otel.Tracer("search-service")
 
 func main() {
-	tp := pkg_otel.SetupOtelTracer("localhost:4317", "search-service")
+	cfg := search_dotnevx.NewConfig()
+
+	tp := pkg_otel.SetupOtelTracer(cfg.GetAPPConfig().OtelURL, "search-service")
 	defer func() {
 		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancle()
@@ -34,7 +36,6 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	g, gCtx := errgroup.WithContext(ctx)
-	cfg := search_dotnevx.NewConfig()
 	es, err := pkg_elasticsearch.NewElasticsearch(cfg.GetAPPConfig().ElasticsearchAddress, cfg.GetAPPConfig().ElasticsearchUsername, cfg.GetAPPConfig().ElasticsearchPassword)
 	repository := search_elasticsearch_repository.NewSearchElasticSearchRepository(es, tracer)
 	usecase := usecase.NewSearchProductUsecase(tracer, repository)

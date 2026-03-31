@@ -22,7 +22,8 @@ import (
 var tracer = otel.Tracer("product-worker-service")
 
 func main() {
-	tp := pkg_otel.SetupOtelTracer("localhost:4317", "product-worker-service")
+	cfg := dotnevx.NewConfig()
+	tp := pkg_otel.SetupOtelTracer(cfg.GetAPPConfig().OtelURL, "product-worker-service")
 	defer func() {
 		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancle()
@@ -32,7 +33,6 @@ func main() {
 	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	cfg := dotnevx.NewConfig()
 	poolCtx, stopPool := context.WithTimeout(context.Background(), 30*time.Second)
 	defer stopPool()
 	pool, _ := pkg_postgres.NewPostgresPool(poolCtx, cfg.GetDBConfig().DatabaseURL)

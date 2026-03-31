@@ -7,8 +7,11 @@ type GatewayConfig struct {
 }
 
 type GatewayAppConfig struct {
-	Address string
-	Name    string
+	Address    string
+	Name       string
+	OtelURL    string
+	SearchURL  string
+	ProductURL string
 }
 
 type KeyclaokAppConfig struct {

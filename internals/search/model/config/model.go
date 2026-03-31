@@ -8,6 +8,7 @@ type SearchAppConfig struct {
 	ElasticsearchAddress  string
 	ElasticsearchUsername string
 	ElasticsearchPassword string
+	OtelURL               string
 }
 
 // type SearchDBConfig struct {

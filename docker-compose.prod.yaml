@@ -1,1 +1,39 @@
-docker-compose.yaml
+version: '3.9'
+services:
+  gateway-service-api:
+    image: gateway-service-api
+    env_file:
+      - envs/prod/gateway/.env
+    ports:
+      - "6001:6001"
+    build:
+      context: .
+      dockerfile: internals/gateway/Dockerfile
+  product-service-api:
+    image: product-service-api
+    env_file:
+      - envs/prod/product/.env
+    build:
+      context: .
+      dockerfile: internals/product/Dockerfile.api
+  product-service-worker:
+    image: product-service-worker
+    env_file:
+      - envs/prod/product/.env
+    build:
+      context: .
+      dockerfile: internals/product/Dockerfile.worker
+  search-service-api:
+    image: search-service-api:latest
+    env_file:
+      - envs/prod/search/.env
+    build:
+      context: .
+      dockerfile: internals/search/Dockerfile.api
+  search-service-worker:
+    image: search-service-worker:latest
+    env_file:
+      - envs/prod/search/.env
+    build:
+      context: .
+      dockerfile: internals/search/Dockerfile.worker

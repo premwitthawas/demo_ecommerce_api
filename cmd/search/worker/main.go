@@ -19,7 +19,8 @@ import (
 var tracer = otel.Tracer("search-worker-service")
 
 func main() {
-	tp := pkg_otel.SetupOtelTracer("localhost:4317", "search-worker-service")
+	cfg := dotnevx.NewConfig()
+	tp := pkg_otel.SetupOtelTracer(cfg.GetAPPConfig().OtelURL, "search-service")
 	defer func() {
 		ctx, cancle := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancle()
@@ -29,7 +30,6 @@ func main() {
 	}()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	cfg := dotnevx.NewConfig()
 	groupTopics := "product.created,product.updated,product.deleted"
 	client, err := pkg_elasticsearch.NewElasticsearch(cfg.GetAPPConfig().ElasticsearchAddress, cfg.GetAPPConfig().ElasticsearchUsername, cfg.GetAPPConfig().ElasticsearchPassword)
 	if err != nil {

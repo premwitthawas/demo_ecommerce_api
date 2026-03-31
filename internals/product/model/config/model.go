@@ -5,6 +5,7 @@ type ProductAppConfig struct {
 	Name           string
 	Mode           string
 	KafkaAddresses string
+	OtelURL        string
 }
 
 type ProductDBConfig struct {
